@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chroniques de chasse — Prototype de combat</title>
+<style>
+:root{--bg:#101820;--panel:#1b2933;--panel2:#243641;--gold:#e5b85c;--cream:#f2eadb;--muted:#a9b7b9;--red:#d96b5f;--green:#79bd83;--blue:#79b8d4}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at top,#263b43 0,#101820 58%);color:var(--cream);font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;padding:22px}
+main{max-width:1000px;margin:auto}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}
+h1{font-family:Georgia,serif;letter-spacing:.04em;margin:0;color:var(--gold);font-size:clamp(25px,5vw,38px)}
+.kicker{color:var(--muted);font-size:12px;letter-spacing:.18em;text-transform:uppercase}
+.badge{border:1px solid #53636a;border-radius:99px;padding:7px 12px;color:var(--muted);font-size:12px}
+.arena{background:linear-gradient(145deg,#263943,#17242d);border:1px solid #53636a;border-radius:18px;padding:22px;box-shadow:0 18px 55px #0007}
+.stage{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:center;min-height:250px}
+.combatant{background:#101a21a8;border:1px solid #40545c;border-radius:14px;padding:16px;min-width:0}
+.name-line{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.name{font-family:Georgia,serif;font-size:21px;color:var(--gold)}.level{font-size:12px;color:var(--muted)}
+.sprite{height:130px;display:grid;place-items:center;margin:8px 0}.sprite svg{height:130px;max-width:100%;filter:drop-shadow(0 12px 9px #0008)}
+.hunter svg{height:118px}
+.bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+.bar{height:11px;background:#0b1116;border-radius:99px;overflow:hidden;border:1px solid #45545a}.fill{height:100%;width:100%;transition:width .25s}.hp{background:linear-gradient(90deg,#4e9d67,#8ed18c)}.monsterhp{background:linear-gradient(90deg,#b34d47,#e58a63)}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+button{border:1px solid #64777d;background:linear-gradient(#314751,#243640);color:var(--cream);padding:13px 12px;border-radius:11px;font-weight:650;font-size:14px;cursor:pointer;text-align:left;transition:.15s}
+button:hover:not(:disabled){border-color:var(--gold);transform:translateY(-1px);background:linear-gradient(#3c5963,#2a404a)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button small{display:block;color:#b9c6c4;font-weight:400;margin-top:3px}
+button .key{float:right;color:var(--gold);font-size:11px}
+.bottom{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:16px}
+.box{background:#18252d;border:1px solid #40545c;border-radius:14px;padding:15px}
+.box h2{font:18px Georgia,serif;color:var(--gold);margin:0 0 10px}
+#log{height:150px;overflow:auto;font-size:13px;line-height:1.55;color:#d7dfd9}
+#log p{margin:0 0 5px;border-bottom:1px solid #ffffff0c;padding-bottom:4px}
+.status{font-size:13px;color:var(--muted);line-height:1.55}
+.status strong{color:var(--cream)}
+.footer{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:14px;color:var(--muted);font-size:12px}
+#restart{padding:9px 13px;text-align:center;background:#59452b;border-color:#9b7844}
+.result{color:var(--gold);font-weight:700}
+@media(max-width:650px){body{padding:12px}.stage{grid-template-columns:1fr;gap:10px}.combatant{padding:12px}.sprite{height:95px}.sprite svg{height:100px}.bottom{grid-template-columns:1fr}.arena{padding:14px}.controls{gap:8px}button{font-size:13px;padding:11px 9px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><div><div class="kicker">Prototype jouable · système de combat</div><h1>Chroniques de chasse</h1></div><div class="badge">Démo v0.1</div></div>
+  <section class="arena">
+    <div class="stage">
+      <article class="combatant hunter">
+        <div class="name-line"><span class="name">Chasseur</span><span class="level">Rang 1</span></div>
+        <div class="sprite">
+          <svg viewBox="0 0 180 130" role="img" aria-label="Silhouette originale de chasseur">
+            <ellipse cx="88" cy="116" rx="48" ry="7" fill="#080f13" opacity=".6"/>
+            <path d="M58 46 46 24 67 34 79 13 91 35 111 25 105 49" fill="#9b7650" stroke="#e1bd79" stroke-width="3"/>
+            <circle cx="83" cy="43" r="17" fill="#d9b98a" stroke="#44382e" stroke-width="4"/>
+            <path d="M65 43q18-25 37 0l-3 9H67z" fill="#465b60"/>
+            <path d="M58 65 107 62 121 104 52 104z" fill="#526b69" stroke="#c4a46a" stroke-width="4"/>
+            <path d="M60 73 31 94 38 101 70 87M105 72l27 18-6 9-31-15" fill="#8c6a49" stroke="#d0aa6d" stroke-width="4"/>
+            <path d="M66 102 62 119 77 119 84 102M94 102l8 17 15-2-8-18" fill="#4a5151" stroke="#c4a46a" stroke-width="3"/>
+            <path d="M132 35 144 13 149 39 160 48 151 54 143 48 137 59" fill="none" stroke="#d8c28d" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="bar-label"><span>❤️ PV</span><strong id="playerText">120 / 120</strong></div><div class="bar"><div id="playerBar" class="fill hp"></div></div>
+      </article>
+      <article class="combatant">
+        <div class="name-line"><span class="name">Griffebraise</span><span class="level">Monstre · Rang 1</span></div>
+        <div class="sprite">
+          <svg viewBox="0 0 220 130" role="img" aria-label="Monstre original ressemblant à un petit wyverne">
+            <ellipse cx="111" cy="116" rx="70" ry="8" fill="#080f13" opacity=".6"/>
+            <path d="M66 76Q25 38 13 57q24 2 36 35M151 72q42-46 57-22-25 4-39 37" fill="#a94e39" stroke="#e5a05b" stroke-width="4"/>
+            <path d="M66 68 51 43 74 50 88 25 99 51 125 39 120 68" fill="#a94e39" stroke="#e5a05b" stroke-width="4"/>
+            <path d="M64 67Q87 48 128 65l27 26-17 19H71L51 91z" fill="#b95b3e" stroke="#713b31" stroke-width="4"/>
+            <path d="M129 66q31-20 47-7l-8 24-27 5" fill="#c66c46" stroke="#713b31" stroke-width="4"/>
+            <path d="M162 72l20 4-17 9" fill="#e5b85c"/><circle cx="157" cy="68" r="4" fill="#f6dc8a"/>
+            <path d="M79 103l-5 14h14l7-14M126 103l8 14h14l-8-17" fill="#70443a" stroke="#e5a05b" stroke-width="3"/>
+            <path d="M57 89Q31 101 22 89q14 3 27-14" fill="none" stroke="#e5a05b" stroke-width="6" stroke-linecap="round"/>
+            <path d="M87 83l13 7 12-7" fill="none" stroke="#e9b36b" stroke-width="3"/>
+          </svg>
+        </div>
+        <div class="bar-label"><span>🐉 PV</span><strong id="monsterText">160 / 160</strong></div><div class="bar"><div id="monsterBar" class="fill monsterhp"></div></div>
+      </article>
+    </div>
+    <div class="controls">
+      <button id="quick">⚔️ Frappe rapide <span class="key">10 énergie</span><small>Inflige 18 à 25 dégâts. Rapide et fiable.</small></button>
+      <button id="heavy">💥 Frappe chargée <span class="key">25 énergie</span><small>Inflige 35 à 48 dégâts. Plus puissante.</small></button>
+      <button id="guard">🛡️ Se mettre en garde <span class="key">Gratuit</span><small>Réduit la prochaine attaque du monstre.</small></button>
+      <button id="potion">🧪 Potion <span class="key">1 utilisation</span><small>Récupère 35 PV. À utiliser au bon moment.</small></button>
+    </div>
+  </section>
+  <section class="bottom">
+    <div class="box"><h2>Journal du combat</h2><div id="log" aria-live="polite"><p>Un Griffebraise bloque le passage. À toi de jouer !</p></div></div>
+    <div class="box"><h2>État du chasseur</h2><div class="status">⚡ Énergie : <strong id="energy">60 / 60</strong><br>🧪 Potions restantes : <strong id="potions">1</strong><br>🛡️ Garde : <strong id="guardStatus">Non active</strong><p id="hint">Choisis une capacité pour commencer ton tour. L'énergie remonte un peu à chaque tour.</p></div></div>
+  </section>
+  <div class="footer"><span>Combat au tour par tour · prototype original</span><button id="restart">↻ Recommencer</button></div>
+</main>
+<script>
+const maxPlayer=120,maxMonster=160,maxEnergy=60;
+let player=maxPlayer,monster=maxMonster,energy=maxEnergy,potions=1,guarding=false,ended=false;
+const $=id=>document.getElementById(id);
+function log(message){const p=document.createElement('p');p.textContent=message;$('log').prepend(p)}
+function update(){
+ $('playerText').textContent=`${player} / ${maxPlayer}`;$('monsterText').textContent=`${monster} / ${maxMonster}`;
+ $('playerBar').style.width=`${player/maxPlayer*100}%`;$('monsterBar').style.width=`${monster/maxMonster*100}%`;
+ $('energy').textContent=`${energy} / ${maxEnergy}`;$('potions').textContent=potions;$('guardStatus').textContent=guarding?'Active':'Non active';
+ ['quick','heavy','guard','potion'].forEach(id=>$(id).disabled=ended);
+ $('quick').disabled=ended||energy<10;$('heavy').disabled=ended||energy<25;$('potion').disabled=ended||potions<1||player===maxPlayer;
+}
+function finish(){if(monster<=0){monster=0;ended=true;log('🏆 Victoire ! Le Griffebraise est vaincu.');$('hint').innerHTML='<span class="result">Victoire !</span> Tu as remporté ce combat.'}
+ else if(player<=0){player=0;ended=true;log('Le chasseur est à bout de forces.');$('hint').textContent='Défaite. Recommence pour retenter le combat.'}update()}
+function enemyTurn(){
+ if(ended)return;
+ const damage=Math.floor(Math.random()*15)+14;
+ const actual=guarding?Math.ceil(damage*.35):damage;
+ player=Math.max(0,player-actual);
+ log(guarding?`Le Griffebraise attaque, mais ta garde réduit les dégâts à ${actual} !`:`Le Griffebraise bondit et inflige ${actual} dégâts.`);
+ guarding=false;
+ if(player<=0){finish();return}
+ energy=Math.min(maxEnergy,energy+12);
+ update();
+}
+function action(kind){
+ if(ended)return;
+ if(kind==='quick'){energy-=10;const d=Math.floor(Math.random()*8)+18;monster=Math.max(0,monster-d);log(`Frappe rapide : ${d} dégâts !`)}
+ if(kind==='heavy'){energy-=25;const d=Math.floor(Math.random()*14)+35;monster=Math.max(0,monster-d);log(`Frappe chargée : ${d} dégâts !`)}
+ if(kind==='guard'){guarding=true;log('Tu prends une posture défensive. La prochaine attaque sera réduite.')}
+ if(kind==='potion'){potions--;const heal=Math.min(35,maxPlayer-player);player+=heal;log(`Potion utilisée : tu récupères ${heal} PV.`)}
+ finish();if(!ended)enemyTurn();
+}
+$('quick').onclick=()=>action('quick');$('heavy').onclick=()=>action('heavy');$('guard').onclick=()=>action('guard');$('potion').onclick=()=>action('potion');
+$('restart').onclick=()=>{player=maxPlayer;monster=maxMonster;energy=maxEnergy;potions=1;guarding=false;ended=false;$('log').innerHTML='<p>Un Griffebraise bloque le passage. À toi de jouer !</p>';$('hint').textContent='Choisis une capacité pour commencer ton tour. L’énergie remonte un peu à chaque tour.';update()};
+update();
+</script>
+</body>
+</html>
