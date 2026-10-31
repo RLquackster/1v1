@@ -1,131 +1,45 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chroniques de chasse — Prototype de combat</title>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>1v1 — Arène</title>
 <style>
-:root{--bg:#101820;--panel:#1b2933;--panel2:#243641;--gold:#e5b85c;--cream:#f2eadb;--muted:#a9b7b9;--red:#d96b5f;--green:#79bd83;--blue:#79b8d4}
-*{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at top,#263b43 0,#101820 58%);color:var(--cream);font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;padding:22px}
-main{max-width:1000px;margin:auto}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}
-h1{font-family:Georgia,serif;letter-spacing:.04em;margin:0;color:var(--gold);font-size:clamp(25px,5vw,38px)}
-.kicker{color:var(--muted);font-size:12px;letter-spacing:.18em;text-transform:uppercase}
-.badge{border:1px solid #53636a;border-radius:99px;padding:7px 12px;color:var(--muted);font-size:12px}
-.arena{background:linear-gradient(145deg,#263943,#17242d);border:1px solid #53636a;border-radius:18px;padding:22px;box-shadow:0 18px 55px #0007}
-.stage{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:center;min-height:250px}
-.combatant{background:#101a21a8;border:1px solid #40545c;border-radius:14px;padding:16px;min-width:0}
-.name-line{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.name{font-family:Georgia,serif;font-size:21px;color:var(--gold)}.level{font-size:12px;color:var(--muted)}
-.sprite{height:130px;display:grid;place-items:center;margin:8px 0}.sprite svg{height:130px;max-width:100%;filter:drop-shadow(0 12px 9px #0008)}
-.hunter svg{height:118px}
-.bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
-.bar{height:11px;background:#0b1116;border-radius:99px;overflow:hidden;border:1px solid #45545a}.fill{height:100%;width:100%;transition:width .25s}.hp{background:linear-gradient(90deg,#4e9d67,#8ed18c)}.monsterhp{background:linear-gradient(90deg,#b34d47,#e58a63)}
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
-button{border:1px solid #64777d;background:linear-gradient(#314751,#243640);color:var(--cream);padding:13px 12px;border-radius:11px;font-weight:650;font-size:14px;cursor:pointer;text-align:left;transition:.15s}
-button:hover:not(:disabled){border-color:var(--gold);transform:translateY(-1px);background:linear-gradient(#3c5963,#2a404a)}
-button:disabled{opacity:.4;cursor:not-allowed}
-button small{display:block;color:#b9c6c4;font-weight:400;margin-top:3px}
-button .key{float:right;color:var(--gold);font-size:11px}
-.bottom{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:16px}
-.box{background:#18252d;border:1px solid #40545c;border-radius:14px;padding:15px}
-.box h2{font:18px Georgia,serif;color:var(--gold);margin:0 0 10px}
-#log{height:150px;overflow:auto;font-size:13px;line-height:1.55;color:#d7dfd9}
-#log p{margin:0 0 5px;border-bottom:1px solid #ffffff0c;padding-bottom:4px}
-.status{font-size:13px;color:var(--muted);line-height:1.55}
-.status strong{color:var(--cream)}
-.footer{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:14px;color:var(--muted);font-size:12px}
-#restart{padding:9px 13px;text-align:center;background:#59452b;border-color:#9b7844}
-.result{color:var(--gold);font-weight:700}
-@media(max-width:650px){body{padding:12px}.stage{grid-template-columns:1fr;gap:10px}.combatant{padding:12px}.sprite{height:95px}.sprite svg{height:100px}.bottom{grid-template-columns:1fr}.arena{padding:14px}.controls{gap:8px}button{font-size:13px;padding:11px 9px}}
-</style>
-</head>
-<body>
-<main>
-  <div class="top"><div><div class="kicker">Prototype jouable · système de combat</div><h1>Chroniques de chasse</h1></div><div class="badge">Démo v0.1</div></div>
-  <section class="arena">
-    <div class="stage">
-      <article class="combatant hunter">
-        <div class="name-line"><span class="name">Chasseur</span><span class="level">Rang 1</span></div>
-        <div class="sprite">
-          <svg viewBox="0 0 180 130" role="img" aria-label="Silhouette originale de chasseur">
-            <ellipse cx="88" cy="116" rx="48" ry="7" fill="#080f13" opacity=".6"/>
-            <path d="M58 46 46 24 67 34 79 13 91 35 111 25 105 49" fill="#9b7650" stroke="#e1bd79" stroke-width="3"/>
-            <circle cx="83" cy="43" r="17" fill="#d9b98a" stroke="#44382e" stroke-width="4"/>
-            <path d="M65 43q18-25 37 0l-3 9H67z" fill="#465b60"/>
-            <path d="M58 65 107 62 121 104 52 104z" fill="#526b69" stroke="#c4a46a" stroke-width="4"/>
-            <path d="M60 73 31 94 38 101 70 87M105 72l27 18-6 9-31-15" fill="#8c6a49" stroke="#d0aa6d" stroke-width="4"/>
-            <path d="M66 102 62 119 77 119 84 102M94 102l8 17 15-2-8-18" fill="#4a5151" stroke="#c4a46a" stroke-width="3"/>
-            <path d="M132 35 144 13 149 39 160 48 151 54 143 48 137 59" fill="none" stroke="#d8c28d" stroke-width="5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="bar-label"><span>❤️ PV</span><strong id="playerText">120 / 120</strong></div><div class="bar"><div id="playerBar" class="fill hp"></div></div>
-      </article>
-      <article class="combatant">
-        <div class="name-line"><span class="name">Griffebraise</span><span class="level">Monstre · Rang 1</span></div>
-        <div class="sprite">
-          <svg viewBox="0 0 220 130" role="img" aria-label="Monstre original ressemblant à un petit wyverne">
-            <ellipse cx="111" cy="116" rx="70" ry="8" fill="#080f13" opacity=".6"/>
-            <path d="M66 76Q25 38 13 57q24 2 36 35M151 72q42-46 57-22-25 4-39 37" fill="#a94e39" stroke="#e5a05b" stroke-width="4"/>
-            <path d="M66 68 51 43 74 50 88 25 99 51 125 39 120 68" fill="#a94e39" stroke="#e5a05b" stroke-width="4"/>
-            <path d="M64 67Q87 48 128 65l27 26-17 19H71L51 91z" fill="#b95b3e" stroke="#713b31" stroke-width="4"/>
-            <path d="M129 66q31-20 47-7l-8 24-27 5" fill="#c66c46" stroke="#713b31" stroke-width="4"/>
-            <path d="M162 72l20 4-17 9" fill="#e5b85c"/><circle cx="157" cy="68" r="4" fill="#f6dc8a"/>
-            <path d="M79 103l-5 14h14l7-14M126 103l8 14h14l-8-17" fill="#70443a" stroke="#e5a05b" stroke-width="3"/>
-            <path d="M57 89Q31 101 22 89q14 3 27-14" fill="none" stroke="#e5a05b" stroke-width="6" stroke-linecap="round"/>
-            <path d="M87 83l13 7 12-7" fill="none" stroke="#e9b36b" stroke-width="3"/>
-          </svg>
-        </div>
-        <div class="bar-label"><span>🐉 PV</span><strong id="monsterText">160 / 160</strong></div><div class="bar"><div id="monsterBar" class="fill monsterhp"></div></div>
-      </article>
-    </div>
-    <div class="controls">
-      <button id="quick">⚔️ Frappe rapide <span class="key">10 énergie</span><small>Inflige 18 à 25 dégâts. Rapide et fiable.</small></button>
-      <button id="heavy">💥 Frappe chargée <span class="key">25 énergie</span><small>Inflige 35 à 48 dégâts. Plus puissante.</small></button>
-      <button id="guard">🛡️ Se mettre en garde <span class="key">Gratuit</span><small>Réduit la prochaine attaque du monstre.</small></button>
-      <button id="potion">🧪 Potion <span class="key">1 utilisation</span><small>Récupère 35 PV. À utiliser au bon moment.</small></button>
-    </div>
-  </section>
-  <section class="bottom">
-    <div class="box"><h2>Journal du combat</h2><div id="log" aria-live="polite"><p>Un Griffebraise bloque le passage. À toi de jouer !</p></div></div>
-    <div class="box"><h2>État du chasseur</h2><div class="status">⚡ Énergie : <strong id="energy">60 / 60</strong><br>🧪 Potions restantes : <strong id="potions">1</strong><br>🛡️ Garde : <strong id="guardStatus">Non active</strong><p id="hint">Choisis une capacité pour commencer ton tour. L'énergie remonte un peu à chaque tour.</p></div></div>
-  </section>
-  <div class="footer"><span>Combat au tour par tour · prototype original</span><button id="restart">↻ Recommencer</button></div>
-</main>
+*{box-sizing:border-box}body{margin:0;padding:14px;background:#111d26;color:#f5f0df;font:14px system-ui}main{max-width:1050px;margin:auto}h1{font: bold 34px Georgia;color:#f3ca70;margin:4px 0 12px}.tag{color:#bdc9c8;font-size:11px;letter-spacing:3px;text-transform:uppercase}
+.arena{position:relative;border:3px solid #c7bb96;border-radius:16px;overflow:hidden;background:#9cc6c2}canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.hud{position:absolute;inset:0;padding:12px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:10px}.unit{width:31%;background:#fff9e9ed;color:#23313a;border:3px solid #42585b;border-radius:9px;padding:8px;box-shadow:4px 4px #223a3a77}.unit.player{align-self:flex-end}.urow{display:flex;justify-content:space-between;font-weight:800}.small{font-size:10px;color:#617174}.bar{height:9px;background:#adb9a8;border:1px solid #758576;border-radius:9px;overflow:hidden;margin-top:4px}.fill{height:100%;background:linear-gradient(90deg,#43995b,#9bc95e);width:100%}.enemy .fill{background:linear-gradient(90deg,#bd7533,#e8c85b)}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-top:12px}.panel{background:linear-gradient(145deg,#2b414b,#192832);border:1px solid #61767b;border-radius:13px;padding:13px}h2{font:18px Georgia;color:#f3ca70;margin:0 0 9px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}button{background:linear-gradient(#455f68,#2a414b);border:2px solid #71878a;border-radius:9px;color:#fff5df;padding:10px;text-align:left;font-weight:750;cursor:pointer}button:hover:not(:disabled){border-color:#f3ca70;filter:brightness(1.12)}button:disabled{opacity:.4;cursor:not-allowed}button small{display:block;color:#c5d1ce;font-size:10px;font-weight:400;margin-top:3px}.enemylist{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.enemylist button{font-size:11px;padding:7px}.enemylist .active{border-color:#f3ca70;background:#65502d}.log{height:105px;overflow:auto;font-size:12px;line-height:1.5}.log p{margin:0 0 5px;border-bottom:1px solid #ffffff16;padding-bottom:4px}.stats{line-height:1.8;color:#d5dfdc;font-size:13px}.stats b{color:white}#msg{color:#f3ca70;font-weight:bold;min-height:18px}.foot{display:flex;justify-content:space-between;align-items:center;color:#b8c4c2;font-size:11px;margin-top:10px}
+@media(max-width:680px){body{padding:8px}.grid{grid-template-columns:1fr}.panel{padding:10px}.unit{width:40%;padding:6px}.urow{font-size:11px}.small{font-size:9px}.hud{padding:7px}.actions{gap:6px}button{font-size:12px;padding:8px}}
+</style></head><body><main><div class="tag">RPG tactique · tour par tour</div><h1>1v1 — Arène de chasse</h1>
+<section class="arena"><canvas id="cv" width="960" height="500"></canvas><div class="hud">
+<div class="unit enemy"><div class="urow"><span id="ename">Griffebraise</span><span class="small" id="elvl">Niv. 1</span></div><div class="small">PV <b id="ehp">160 / 160</b></div><div class="bar"><div class="fill" id="ebar"></div></div></div>
+<div class="unit player"><div class="urow"><span>Chasseur</span><span class="small">Niv. 1</span></div><div class="small">PV <b id="php">150 / 150</b></div><div class="bar"><div class="fill" id="pbar"></div></div></div></div></section>
+<section class="grid"><div class="panel"><h2>Choisis ton action</h2><div class="actions">
+<button id="quick">⚔️ Coup rapide<small>20–28 dégâts · 8 énergie</small></button><button id="heavy">💥 Frappe chargée<small>38–52 dégâts · 22 énergie</small></button>
+<button id="element">🔥 Frappe élémentaire<small>30–42 dégâts · 18 énergie · bonus feu sur Jagras</small></button><button id="guard">🛡️ Garde<small>Réduit de 75 % la prochaine attaque</small></button>
+<button id="focus">✨ Concentration<small>+24 énergie et +30 % au prochain coup</small></button><button id="potion">🧪 Potion<small>Récupère 40 PV · 2 utilisations</small></button></div></div>
+<div class="panel"><h2>Adversaires</h2><div class="enemylist"><button data-i="0" class="active">Griffebraise</button><button data-i="1">Grand Jagras</button><button data-i="2">Rathian</button></div><h2>Journal</h2><div class="log" id="log"><p>Un Griffebraise sauvage apparaît !</p></div><div class="stats">⚡ Énergie : <b id="energy">60 / 60</b><br>🧪 Potions : <b id="potions">2</b><br>🛡️ Garde : <b id="guardtxt">Inactive</b><br>✨ Concentration : <b id="focustxt">Inactive</b></div><p id="msg">À toi de jouer !</p></div></section>
+<div class="foot"><span>Sprites pixel art pseudo-3D originaux</span><button id="restart">↻ Recommencer</button></div></main>
 <script>
-const maxPlayer=120,maxMonster=160,maxEnergy=60;
-let player=maxPlayer,monster=maxMonster,energy=maxEnergy,potions=1,guarding=false,ended=false;
-const $=id=>document.getElementById(id);
-function log(message){const p=document.createElement('p');p.textContent=message;$('log').prepend(p)}
-function update(){
- $('playerText').textContent=`${player} / ${maxPlayer}`;$('monsterText').textContent=`${monster} / ${maxMonster}`;
- $('playerBar').style.width=`${player/maxPlayer*100}%`;$('monsterBar').style.width=`${monster/maxMonster*100}%`;
- $('energy').textContent=`${energy} / ${maxEnergy}`;$('potions').textContent=potions;$('guardStatus').textContent=guarding?'Active':'Non active';
- ['quick','heavy','guard','potion'].forEach(id=>$(id).disabled=ended);
- $('quick').disabled=ended||energy<10;$('heavy').disabled=ended||energy<25;$('potion').disabled=ended||potions<1||player===maxPlayer;
-}
-function finish(){if(monster<=0){monster=0;ended=true;log('🏆 Victoire ! Le Griffebraise est vaincu.');$('hint').innerHTML='<span class="result">Victoire !</span> Tu as remporté ce combat.'}
- else if(player<=0){player=0;ended=true;log('Le chasseur est à bout de forces.');$('hint').textContent='Défaite. Recommence pour retenter le combat.'}update()}
-function enemyTurn(){
- if(ended)return;
- const damage=Math.floor(Math.random()*15)+14;
- const actual=guarding?Math.ceil(damage*.35):damage;
- player=Math.max(0,player-actual);
- log(guarding?`Le Griffebraise attaque, mais ta garde réduit les dégâts à ${actual} !`:`Le Griffebraise bondit et inflige ${actual} dégâts.`);
- guarding=false;
- if(player<=0){finish();return}
- energy=Math.min(maxEnergy,energy+12);
- update();
-}
-function action(kind){
- if(ended)return;
- if(kind==='quick'){energy-=10;const d=Math.floor(Math.random()*8)+18;monster=Math.max(0,monster-d);log(`Frappe rapide : ${d} dégâts !`)}
- if(kind==='heavy'){energy-=25;const d=Math.floor(Math.random()*14)+35;monster=Math.max(0,monster-d);log(`Frappe chargée : ${d} dégâts !`)}
- if(kind==='guard'){guarding=true;log('Tu prends une posture défensive. La prochaine attaque sera réduite.')}
- if(kind==='potion'){potions--;const heal=Math.min(35,maxPlayer-player);player+=heal;log(`Potion utilisée : tu récupères ${heal} PV.`)}
- finish();if(!ended)enemyTurn();
-}
-$('quick').onclick=()=>action('quick');$('heavy').onclick=()=>action('heavy');$('guard').onclick=()=>action('guard');$('potion').onclick=()=>action('potion');
-$('restart').onclick=()=>{player=maxPlayer;monster=maxMonster;energy=maxEnergy;potions=1;guarding=false;ended=false;$('log').innerHTML='<p>Un Griffebraise bloque le passage. À toi de jouer !</p>';$('hint').textContent='Choisis une capacité pour commencer ton tour. L’énergie remonte un peu à chaque tour.';update()};
-update();
-</script>
-</body>
-</html>
+const c=document.getElementById('cv'),x=c.getContext('2d');x.imageSmoothingEnabled=false;
+const defs=[
+{name:'Griffebraise',lvl:1,hp:160,atk:[15,23],kind:0,col:'#b85b3e',light:'#e8b25d'},
+{name:'Grand Jagras',lvl:2,hp:205,atk:[17,26],kind:1,col:'#b8a04a',light:'#ead17a'},
+{name:'Rathian',lvl:3,hp:255,atk:[20,30],kind:0,col:'#57945b',light:'#c6d17b'}];
+let idx=0,e,php=150,en=60,pots=2,guard=false,focus=false,over=false,busy=false,pa=0,ea=0;
+const $=id=>document.getElementById(id),r=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+function poly(p,col){x.fillStyle=col;x.beginPath();x.moveTo(...p[0]);p.slice(1).forEach(q=>x.lineTo(...q));x.closePath();x.fill()}
+function oval(a,b,rx,ry,col){x.fillStyle=col;x.beginPath();x.ellipse(a,b,rx,ry,0,0,7);x.fill()}
+function bg(){let g=x.createLinearGradient(0,0,0,500);g.addColorStop(0,'#80bdc8');g.addColorStop(.58,'#d4d9b5');g.addColorStop(1,'#678650');x.fillStyle=g;x.fillRect(0,0,960,500);oval(800,75,35,35,'#fff0b4');
+for(let i=0;i<5;i++){let a=70+i*210;oval(a,100,45,12,'#eff1df');oval(a+22,92,28,15,'#eff1df')}
+poly([[0,300],[120,180],[240,300],[360,175],[500,300],[650,190],[810,300],[930,205],[960,260],[960,390],[0,390]],'#85a887');
+for(let i=0;i<13;i++){let a=i*82; x.fillStyle='#665e43';x.fillRect(a,260,10,85);poly([[a-28,275],[a+5,190],[a+40,275]],i%2?'#456f54':'#527b5a')}
+poly([[0,360],[960,330],[960,500],[0,500]],'#718d55');for(let yy=370;yy<500;yy+=26)for(let xx=-30;xx<1000;xx+=52)poly([[xx,yy],[xx+26,yy-10],[xx+52,yy],[xx+26,yy+10]],(xx+yy)%3?'#829c5c':'#789455');
+oval(710,330,150,37,'#405b45');oval(710,320,150,35,'#d4d59e');oval(245,420,200,50,'#405b45');oval(245,410,200,48,'#d4d59e')}
+function hunter(px,py){x.save();x.translate(px,py);oval(0,4,65,13,'#344b3b88');poly([[-28,-45],[-5,-44],[-14,0],[-39,0]],'#394951');poly([[4,-44],[27,-43],[40,0],[15,0]],'#46565a');poly([[-36,-110],[26,-117],[44,-48],[20,-35],[-40,-42],[-50,-80]],'#587c7b');poly([[-36,-110],[0,-120],[3,-42],[-40,-42]],'#416565');poly([[0,-120],[26,-117],[44,-48],[3,-42]],'#71918a');poly([[-38,-100],[-60,-62],[-43,-49],[-12,-90]],'#a88b5d');poly([[25,-104],[52,-77],[43,-57],[15,-88]],'#9b8055');x.fillStyle='#d4b38b';x.beginPath();x.ellipse(0,-137,23,25,0,0,7);x.fill();poly([[-27,-145],[-22,-169],[-4,-184],[8,-167],[29,-169],[23,-140],[11,-151],[-13,-149]],'#536c70');poly([[-25,-145],[-47,-174],[-18,-164]],'#b99a63');poly([[20,-151],[46,-170],[30,-137]],'#b99a63');poly([[42,-112],[54,-121],[112,-225],[119,-219],[66,-106]],'#c5d3c9');x.restore()}
+function monster(px,py,d){x.save();x.translate(px,py);oval(0,7,100,17,'#344a3788');if(d.kind===1){poly([[-60,-55],[-120,-35],[-145,-54],[-105,-72],[-56,-78]],d.col);poly([[-83,-98],[-39,-125],[35,-117],[82,-79],[63,-34],[-54,-29],[-94,-59]],d.col);poly([[-83,-98],[-39,-125],[-28,-42],[-54,-29],[-94,-59]],'#8c7d3c');poly([[-28,-42],[-39,-125],[35,-117],[82,-79],[63,-34]],d.light);poly([[50,-100],[99,-117],[133,-95],[116,-62],[70,-60]],'#b8a24b');poly([[104,-88],[149,-76],[118,-64]],'#e1c76b');x.fillStyle='#fff0a0';x.fillRect(105,-101,8,7);for(let i=0;i<3;i++)poly([[-45+i*25,-119],[-35+i*25,-148],[-15+i*25,-120]],'#6c713f')}
+else{poly([[-63,-64],[-133,-18],[-160,-30],[-116,-79],[-70,-94]],d.col);poly([[-32,-105],[-112,-191],[-67,-174],[-16,-143],[0,-113]],'#844d3d');poly([[29,-108],[111,-194],[79,-166],[51,-125],[15,-112]],d.col);poly([[-112,-191],[-67,-174],[-16,-143],[-59,-157]],d.light);poly([[111,-194],[79,-166],[51,-125],[15,-112],[61,-155]],d.light);poly([[-75,-111],[-37,-137],[39,-130],[88,-91],[62,-37],[-51,-31],[-91,-66]],d.col);poly([[-75,-111],[-37,-137],[-28,-42],[-51,-31],[-91,-66]],'#8d4436');poly([[-28,-42],[-37,-137],[39,-130],[88,-91],[62,-37]],d.light);poly([[-44,-44],[-18,-43],[-29,5],[-58,5]],'#75473a');poly([[28,-44],[52,-39],[70,4],[43,4]],'#75473a');poly([[54,-112],[105,-133],[137,-111],[119,-76],[76,-69]],d.col);poly([[115,-101],[151,-84],[118,-72]],'#e5ad61');x.fillStyle='#fff0a0';x.fillRect(109,-114,8,7);poly([[-28,-133],[-12,-166],[0,-133]],d.light);poly([[12,-132],[35,-161],[37,-126]],d.light)}x.restore()}
+function render(){bg();monster(715+ea,322,e);hunter(245+pa,414);requestAnimationFrame(render)}
+function log(t){let p=document.createElement('p');p.textContent=t;$('log').prepend(p)}
+function update(){$('ename').textContent=e.name;$('elvl').textContent='Niv. '+e.lvl;$('ehp').textContent=e.hp+' / '+e.max;$('php').textContent=php+' / 150';$('ebar').style.width=e.hp/e.max*100+'%';$('pbar').style.width=php/150*100+'%';$('energy').textContent=en+' / 60';$('potions').textContent=pots;$('guardtxt').textContent=guard?'Active':'Inactive';$('focustxt').textContent=focus?'Prête':'Inactive';$('quick').disabled=over||busy||en<8;$('heavy').disabled=over||busy||en<22;$('element').disabled=over||busy||en<18;$('guard').disabled=over||busy;$('focus').disabled=over||busy||focus;$('potion').disabled=over||busy||pots<1||php===150;document.querySelectorAll('[data-i]').forEach(b=>b.classList.toggle('active',+b.dataset.i===idx))}
+function finish(){if(e.hp<=0){e.hp=0;over=true;$('msg').textContent='Victoire ! '+e.name+' est vaincu.';log('🏆 '+e.name+' est vaincu !')}else if(php<=0){php=0;over=true;$('msg').textContent='Défaite…';log('Le chasseur est à terre.')}update()}
+function enemyTurn(){if(over)return;busy=true;update();setTimeout(()=>{let d=r(...e.atk);if(guard){d=Math.ceil(d*.25);guard=false;log('🛡️ Garde ! Dégâts réduits.')}else log('🐲 '+e.name+' attaque : '+d+' dégâts.');php=Math.max(0,php-d);pa=-20;setTimeout(()=>{pa=0;en=Math.min(60,en+10);busy=false;finish()},300)},450)}
+function act(t){if(over||busy)return;let d=0;if(t==='quick'){en-=8;d=r(20,28);log('⚔️ Coup rapide : '+d+' dégâts.')}if(t==='heavy'){en-=22;d=r(38,52);log('💥 Frappe chargée : '+d+' dégâts.')}if(t==='element'){en-=18;d=r(30,42);if(idx===1){d=Math.round(d*1.35);log('🔥 Grand Jagras faible au feu : '+d+' dégâts !')}else log('🔥 Frappe élémentaire : '+d+' dégâts.')}if(t==='guard'){guard=true;log('🛡️ Tu te mets en garde.')}if(t==='focus'){en=Math.min(60,en+24);focus=true;log('✨ Concentration : +24 énergie, prochain coup renforcé.');update();enemyTurn();return}if(t==='potion'){pots--;let h=Math.min(40,150-php);php+=h;log('🧪 Potion : +'+h+' PV.')}if(d){if(focus){d=Math.round(d*1.3);focus=false;log('✨ Bonus de concentration : +30 % !')}e.hp=Math.max(0,e.hp-d);ea=25;setTimeout(()=>ea=0,300)}finish();if(!over)enemyTurn()}
+function choose(i){idx=i;let d=defs[i];e={...d,max:d.hp};php=150;en=60;pots=2;guard=false;focus=false;over=false;busy=false;$('log').innerHTML='';$('msg').textContent=d.name+' entre dans l’arène !';log('⚔️ Un '+d.name+' apparaît. À toi de jouer !');update()}
+['quick','heavy','element','guard','focus','potion'].forEach(id=>$(id).onclick=()=>act(id));$('restart').onclick=()=>choose(idx);document.querySelector('.enemylist').onclick=ev=>{let b=ev.target.closest('[data-i]');if(b)choose(+b.dataset.i)};choose(0);render();
+</script></body></html>
