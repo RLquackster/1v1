@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1v1 — Arène de chasse 3D</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:12px;background:#101b22;color:#f5f0df;font:14px system-ui}main{max-width:1100px;margin:auto}
+h1{font: bold 32px Georgia;color:#f3ca70;margin:4px 0 12px}.tag{color:#bdc9c8;font-size:11px;letter-spacing:3px;text-transform:uppercase}
+.arena{position:relative;border:3px solid #c7bb96;border-radius:15px;overflow:hidden;background:#9cc6c2}
+#scene{display:block;width:100%;height:clamp(300px,52vw,530px)}
+.hud{position:absolute;inset:0;padding:12px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:10px}
+.unit{width:31%;background:#fff9e9ed;color:#23313a;border:3px solid #42585b;border-radius:9px;padding:8px;box-shadow:4px 4px #223a3a77}
+.unit.player{align-self:flex-end}.urow{display:flex;justify-content:space-between;font-weight:800}.small{font-size:10px;color:#617174}
+.bar{height:9px;background:#adb9a8;border:1px solid #758576;border-radius:9px;overflow:hidden;margin-top:4px}.fill{height:100%;background:linear-gradient(90deg,#43995b,#9bc95e);width:100%}.enemy .fill{background:linear-gradient(90deg,#bd7533,#e8c85b)}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-top:12px}.panel{background:linear-gradient(145deg,#2b414b,#192832);border:1px solid #61767b;border-radius:13px;padding:13px}
+h2{font:18px Georgia;color:#f3ca70;margin:0 0 9px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{background:linear-gradient(#455f68,#2a414b);border:2px solid #71878a;border-radius:9px;color:#fff5df;padding:10px;text-align:left;font-weight:750;cursor:pointer}
+button:hover:not(:disabled){border-color:#f3ca70;filter:brightness(1.12)}button:disabled{opacity:.4;cursor:not-allowed}button small{display:block;color:#c5d1ce;font-size:10px;font-weight:400;margin-top:3px}
+.enemylist{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.enemylist button{font-size:11px;padding:7px}.enemylist .active{border-color:#f3ca70;background:#65502d}
+.log{height:105px;overflow:auto;font-size:12px;line-height:1.5}.log p{margin:0 0 5px;border-bottom:1px solid #ffffff16;padding-bottom:4px}
+.stats{line-height:1.8;color:#d5dfdc;font-size:13px}.stats b{color:white}#msg{color:#f3ca70;font-weight:bold;min-height:18px}
+.foot{display:flex;justify-content:space-between;align-items:center;color:#b8c4c2;font-size:11px;margin-top:10px}
+@media(max-width:680px){body{padding:7px}.grid{grid-template-columns:1fr}.panel{padding:10px}.unit{width:41%;padding:6px}.urow{font-size:11px}.small{font-size:9px}.hud{padding:7px}.actions{gap:6px}button{font-size:12px;padding:8px}}
+</style>
+</head>
+<body><main>
+<div class="tag">RPG tactique · combat 3D animé</div><h1>1v1 — Arène de chasse</h1>
+<section class="arena"><div id="scene"></div><div class="hud">
+<div class="unit enemy"><div class="urow"><span id="ename">Grand Jagras</span><span class="small" id="elvl">Niv. 2</span></div><div class="small">PV <b id="ehp">205 / 205</b></div><div class="bar"><div class="fill" id="ebar"></div></div></div>
+<div class="unit player"><div class="urow"><span>Chasseur</span><span class="small">Niv. 1</span></div><div class="small">PV <b id="php">150 / 150</b></div><div class="bar"><div class="fill" id="pbar"></div></div></div>
+</div></section>
+<section class="grid"><div class="panel"><h2>Choisis ton action</h2><div class="actions">
+<button id="quick">⚔️ Coup rapide<small>20–28 dégâts · 8 énergie</small></button><button id="heavy">💥 Frappe chargée<small>38–52 dégâts · 22 énergie</small></button>
+<button id="element">🔥 Frappe élémentaire<small>30–42 dégâts · 18 énergie · bonus feu sur Jagras</small></button><button id="guard">🛡️ Garde<small>Réduit de 75 % la prochaine attaque</small></button>
+<button id="focus">✨ Concentration<small>+24 énergie et +30 % au prochain coup</small></button><button id="potion">🧪 Potion<small>Récupère 40 PV · 2 utilisations</small></button></div></div>
+<div class="panel"><h2>Adversaires</h2><div class="enemylist"><button data-i="0">Griffebraise</button><button data-i="1" class="active">Grand Jagras</button><button data-i="2">Rathian</button></div><h2>Journal</h2><div class="log" id="log"><p>Un Grand Jagras apparaît !</p></div>
+<div class="stats">⚡ Énergie : <b id="energy">60 / 60</b><br>🧪 Potions : <b id="potions">2</b><br>🛡️ Garde : <b id="guardtxt">Inactive</b><br>✨ Concentration : <b id="focustxt">Inactive</b></div><p id="msg">À toi de jouer !</p></div></section>
+<div class="foot"><span>Modèles 3D procéduraux originaux · animations d'attaque</span><button id="restart">↻ Recommencer</button></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=>{
+const root=document.getElementById('scene');
+if(!window.THREE){root.innerHTML='<p style="padding:30px">Le moteur 3D n’a pas pu se charger. Vérifie ta connexion puis actualise.</p>';return;}
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bc5c5);scene.fog=new THREE.Fog(0x9bc5c5,18,42);
+const camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(0,6.8,17);camera.lookAt(0,1.5,0);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;root.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe8f5ff,0x52603c,2.0));
+const sun=new THREE.DirectionalLight(0xffedc8,2.6);sun.position.set(-5,10,8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const mat=(color,rough=.85,metal=0)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
+const ground=new THREE.Mesh(new THREE.CircleGeometry(14,64),mat(0x78935b));ground.rotation.x=-Math.PI/2;ground.position.y=-.08;ground.receiveShadow=true;scene.add(ground);
+const ring=new THREE.Mesh(new THREE.RingGeometry(4.8,5.0,64),mat(0xd3c68c));ring.rotation.x=-Math.PI/2;ring.position.y=-.055;scene.add(ring);
+for(let i=0;i<18;i++){let a=i*Math.PI*2/18,r=10+Math.sin(i*9)*1.3;let trunk=new THREE.Mesh(new THREE.CylinderGeometry(.18,.28,2.2,7),mat(0x5b4932));trunk.position.set(Math.cos(a)*r,1.0,Math.sin(a)*r);trunk.castShadow=true;scene.add(trunk);let crown=new THREE.Mesh(new THREE.ConeGeometry(1.25,3.2,7),mat(i%2?0x477653:0x567f55));crown.position.set(Math.cos(a)*r,3.1,Math.sin(a)*r);crown.castShadow=true;scene.add(crown);}
+const sphere=(parent,name,pos,scale,material)=>{let m=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),material);m.name=name;m.position.set(...pos);m.scale.set(...scale);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;};
+const limb=(parent,a,b,radius,material)=>{let A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=B.clone().sub(A);let m=new THREE.Mesh(new THREE.CylinderGeometry(radius*.72,radius,d.length(),9),material);m.position.copy(A.add(B).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());m.castShadow=true;parent.add(m);return m;};
+let enemy=null,parts={},enemyType=1,playerRig=null,playerParts={},anim={kind:'idle',t:0},enemyAnim={kind:'idle',t:0},particles=[];
+const jagMat=mat(0xb5a044),jagDark=mat(0x756b37),belly=mat(0xd9c477),green=mat(0x4d9655),greenDark=mat(0x32633d),wingMat=mat(0x397b49),horn=mat(0xd9d0a5),eye=mat(0xffd66b,.35);
+function buildJagras(){
+let g=new THREE.Group();parts={};sphere(g,'body',[0,1.35,0],[1.65,1.0,.85],jagMat);sphere(g,'belly',[0,.95,.55],[1.25,.58,.5],belly);
+parts.head=sphere(g,'head',[1.35,1.65,.05],[.78,.65,.67],jagMat);sphere(g,'jaw',[1.72,1.22,.12],[.58,.25,.48],belly);
+sphere(g,'eye1',[1.73,1.88,.57],[.12,.13,.07],eye);sphere(g,'eye2',[1.73,1.88,-.57],[.12,.13,.07],eye);
+for(let s of [-1,1]){limb(g,[-.95,1.05,s*.48],[-1.15,.25,s*.62],.25,jagDark);limb(g,[.85,1.05,s*.48],[1.0,.22,s*.62],.27,jagDark);sphere(g,'claw',[1.0,.16,s*.62],[.3,.13,.2],horn);}
+let tail=sphere(g,'tail',[-1.65,1.55,0],[.9,.35,.38],jagMat);tail.rotation.z=-.3;parts.tail=tail;
+for(let i=0;i<4;i++){let spike=sphere(g,'spike',[-.75+i*.48,2.12,0],[.22,.42,.23],jagDark);spike.rotation.z=-.4;}
+g.position.set(3.2,0,0);g.rotation.y=-.18;scene.add(g);return g;
+}
+function buildRathian(){
+let g=new THREE.Group();parts={};sphere(g,'body',[0,1.7,0],[1.45,.83,.78],green);sphere(g,'chest',[.65,1.55,.05],[.72,.75,.7],greenDark);
+parts.head=sphere(g,'head',[1.45,2.0,0],[.72,.48,.48],green);sphere(g,'snout',[1.95,1.82,0],[.55,.25,.36],green);sphere(g,'jaw',[1.75,1.6,0],[.42,.13,.32],belly);
+for(let s of [-1,1]){sphere(g,'eye',[1.55,2.12,s*.39],[.12,.12,.07],eye);let w=new THREE.Group();w.position.set(-.15,2.1,s*.25);let panel=new THREE.Mesh(new THREE.BufferGeometry(),wingMat);let shape=new THREE.Shape();shape.moveTo(0,0);shape.lineTo(-1.9,1.8);shape.lineTo(-.55,1.5);shape.lineTo(.8,1.95);shape.lineTo(.55,.05);shape.closePath();let geo=new THREE.ShapeGeometry(shape);let mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x367b47,side:THREE.DoubleSide,roughness:.8}));mesh.rotation.y=s*.15;mesh.scale.z=1;mesh.castShadow=true;w.add(mesh);g.add(w);parts['wing'+s]=w;
+limb(g,[-.7,1.2,s*.48],[-1.0,.2,s*.55],.2,greenDark);limb(g,[.6,1.15,s*.5],[.9,.18,s*.56],.22,greenDark);
+}
+let tail=sphere(g,'tail',[-1.8,1.65,0],[1.15,.22,.28],green);tail.rotation.z=-.2;parts.tail=tail;
+let spike=sphere(g,'tailspike',[-2.65,1.9,0],[.4,.18,.16],horn);spike.rotation.z=.4;
+for(let i=0;i<3;i++){let sp=sphere(g,'backspike',[-.7+i*.55,2.35,0],[.16,.38,.17],greenDark);sp.rotation.z=-.5;}
+g.position.set(3.2,0,0);scene.add(g);return g;
+}
+function buildHunter(){let g=new THREE.Group();let armor=mat(0x526b70,.7,.2),cloth=mat(0x8d6d45),skin=mat(0xc99d78);sphere(g,'torso',[0,1.15,0],[.42,.65,.3],armor);sphere(g,'head',[0,2.0,0],[.28,.32,.27],skin);sphere(g,'helmet',[0,2.18,0],[.36,.2,.34],armor);limb(g,[-.25,1.5,0],[-.48,.65,0],.13,cloth);limb(g,[.25,1.5,0],[.45,.65,0],.13,cloth);limb(g,[-.18,.75,0],[-.25,.12,0],.15,armor);limb(g,[.18,.75,0],[.25,.12,0],.15,armor);let sword=limb(g,[.45,1.35,.1],[1.2,2.0,.1],.07,mat(0xcbd7d4,.25,.7));playerParts.sword=sword;g.position.set(-3.2,0,0);scene.add(g);return g;}
+function resize(){let w=root.clientWidth,h=root.clientHeight||440;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);}new ResizeObserver(resize).observe(root);resize();
+playerRig=buildHunter();
+const defs=[{name:'Griffebraise',lvl:1,hp:160,atk:[15,23],kind:0},{name:'Grand Jagras',lvl:2,hp:205,atk:[17,26],kind:1},{name:'Rathian',lvl:3,hp:255,atk:[20,30],kind:2}];
+let idx=1,e,php=150,en=60,pots=2,guard=false,focus=false,over=false,busy=false;
+const $=id=>document.getElementById(id),r=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+function log(t){let p=document.createElement('p');p.textContent=t;$('log').prepend(p);}
+function burst(color=0xffb34e){for(let i=0;i<18;i++){let m=new THREE.Mesh(new THREE.SphereGeometry(.055,6,6),new THREE.MeshBasicMaterial({color}));m.position.set((Math.random()-.5)*2,1+Math.random()*2,.4);scene.add(m);particles.push({m,v:new THREE.Vector3((Math.random()-.5)*.15,Math.random()*.16,(Math.random()-.5)*.12),life:35});}}
+function update(){$('ename').textContent=e.name;$('elvl').textContent='Niv. '+e.lvl;$('ehp').textContent=e.hp+' / '+e.max;$('php').textContent=php+' / 150';$('ebar').style.width=e.hp/e.max*100+'%';$('pbar').style.width=php/150*100+'%';$('energy').textContent=en+' / 60';$('potions').textContent=pots;$('guardtxt').textContent=guard?'Active':'Inactive';$('focustxt').textContent=focus?'Prête':'Inactive';['quick','heavy','element'].forEach(id=>$(id).disabled=over||busy);$('quick').disabled||=en<8;$('heavy').disabled||=en<22;$('element').disabled||=en<18;$('guard').disabled=over||busy;$('focus').disabled=over||busy||focus;$('potion').disabled=over||busy||pots<1||php===150;document.querySelectorAll('[data-i]').forEach(b=>b.classList.toggle('active',+b.dataset.i===idx));}
+function setEnemy(i){if(enemy)scene.remove(enemy);idx=i;let d=defs[i];e={...d,max:d.hp};enemy=i===2?buildRathian():buildJagras();if(i===0){enemy.scale.setScalar(.78);enemy.traverse(o=>{if(o.isMesh)o.material=mat(0xb85b3e);});}enemyType=i;php=150;en=60;pots=2;guard=false;focus=false;over=false;busy=false;enemyAnim={kind:'idle',t:0};$('log').innerHTML='';$('msg').textContent=d.name+' entre dans l’arène !';log('⚔️ Un '+d.name+' apparaît. À toi de jouer !');update();}
+function endCheck(){if(e.hp<=0){e.hp=0;over=true;$('msg').textContent='Victoire ! '+e.name+' est vaincu.';log('🏆 '+e.name+' est vaincu !');enemyAnim.kind='down';}else if(php<=0){php=0;over=true;$('msg').textContent='Défaite…';log('Le chasseur est à terre.');}update();}
+function enemyTurn(){if(over)return;busy=true;update();let kind=enemyType===2?'fire':(Math.random()<.5?'bite':'charge');enemyAnim={kind,t:0};$('msg').textContent=kind==='fire'?'La Rathian prépare son attaque !':'Le monstre attaque !';setTimeout(()=>{let d=r(...e.atk);if(guard){d=Math.ceil(d*.25);guard=false;log('🛡️ Garde ! Dégâts réduits.');}else log('🐲 '+e.name+' attaque : '+d+' dégâts.');php=Math.max(0,php-d);burst(0xff7545);enemyAnim={kind:'recover',t:0};setTimeout(()=>{en=Math.min(60,en+10);busy=false;endCheck();},650);},700);}
+function act(t){if(over||busy)return;let d=0;anim={kind:t,t:0};if(t==='quick'){en-=8;d=r(20,28);log('⚔️ Coup rapide : '+d+' dégâts.');}if(t==='heavy'){en-=22;d=r(38,52);log('💥 Frappe chargée : '+d+' dégâts.');}if(t==='element'){en-=18;d=r(30,42);if(idx===1){d=Math.round(d*1.35);log('🔥 Grand Jagras faible au feu : '+d+' dégâts !');}else log('🔥 Frappe élémentaire : '+d+' dégâts.');}if(t==='guard'){guard=true;log('🛡️ Tu te mets en garde.');}if(t==='focus'){en=Math.min(60,en+24);focus=true;log('✨ Concentration : +24 énergie, prochain coup renforcé.');update();enemyTurn();return;}if(t==='potion'){pots--;let h=Math.min(40,150-php);php+=h;log('🧪 Potion : +'+h+' PV.');burst(0x66e5a0);}if(d){if(focus){d=Math.round(d*1.3);focus=false;log('✨ Bonus de concentration : +30 % !');}e.hp=Math.max(0,e.hp-d);burst(t==='element'?0xff6b32:0xffd078);enemyAnim={kind:'hit',t:0};}endCheck();if(!over)enemyTurn();}
+['quick','heavy','element','guard','focus','potion'].forEach(id=>$(id).onclick=()=>act(id));$('restart').onclick=()=>setEnemy(idx);document.querySelector('.enemylist').onclick=ev=>{let b=ev.target.closest('[data-i]');if(b)setEnemy(+b.dataset.i);};setEnemy(1);
+const clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.04);let t=clock.elapsedTime;
+if(enemy){enemy.position.y=0;enemy.rotation.y=-.12+Math.sin(t*1.1)*.035;let bob=Math.sin(t*2.2)*.045;
+if(enemyAnim.kind==='hit'){enemy.position.x=3.2+Math.sin(enemyAnim.t*18)*-.28;enemy.rotation.z=Math.sin(enemyAnim.t*18)*.12;enemyAnim.t+=dt;if(enemyAnim.t>.35){enemyAnim={kind:'idle',t:0};enemy.position.x=3.2;enemy.rotation.z=0;}}
+else if(enemyAnim.kind==='bite'||enemyAnim.kind==='charge'||enemyAnim.kind==='fire'){let p=Math.min(enemyAnim.t/.7,1);enemy.position.x=3.2-(enemyAnim.kind==='charge'?1.3:Math.sin(p*Math.PI)*.7);enemy.rotation.z=enemyAnim.kind==='bite'?-.18*Math.sin(p*Math.PI):0;enemyAnim.t+=dt;if(enemyAnim.t>.7){enemy.position.x=3.2;enemy.rotation.z=0;}}
+else if(enemyAnim.kind==='down'){enemy.rotation.z=THREE.MathUtils.lerp(enemy.rotation.z,-.9,.06);}
+else{enemy.position.y=bob;enemy.rotation.z=0;}
+if(enemyType===2&&parts.wing1&&parts.wing-1){parts.wing1.rotation.z=Math.sin(t*5)*.15;parts.wing-1.rotation.z=-Math.sin(t*5)*.15;}
+if(parts.tail)parts.tail.rotation.z=-.2+Math.sin(t*2)*.12;
+}
+if(playerRig){playerRig.position.y=0;let p=anim.t;let k=anim.kind;if(['quick','heavy','element'].includes(k)){let dur=k==='heavy'?.8:.48;let q=Math.min(p/dur,1);playerRig.position.x=-3.2+Math.sin(q*Math.PI)*.75;playerRig.rotation.y=Math.sin(q*Math.PI)*-.35;if(playerParts.sword)playerParts.sword.rotation.z=(k==='heavy'?-.9:-1.3)*Math.sin(q*Math.PI);anim.t+=dt;if(anim.t>dur){anim={kind:'idle',t:0};playerRig.position.x=-3.2;playerRig.rotation.y=0;}}
+else if(k==='guard'){playerRig.rotation.z=-.12;anim={kind:'idle',t:0};}
+else if(k==='focus'){playerRig.position.y=Math.sin(t*8)*.12;}
+else if(k==='potion'){playerRig.rotation.z=.15;anim={kind:'idle',t:0};}
+else{playerRig.position.y=Math.sin(t*2)*.025;playerRig.rotation.z=0;}}
+particles=particles.filter(p=>{p.m.position.add(p.v);p.v.y-=.006;p.life--;if(p.life<=0){scene.remove(p.m);return false;}return true;});
+renderer.render(scene,camera);}
+animate();
+})();
+</script></body></html>
